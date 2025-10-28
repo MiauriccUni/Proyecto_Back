@@ -1,5 +1,6 @@
 package com.mahou.mahouback.logic.exceptions;
 
+<<<<<<< HEAD
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -55,3 +56,7 @@ public class GlobalExceptionHandler {
         return errorDetail;
     }
 }
+=======
+public class GlobalExceptionHandler {
+}
+>>>>>>> e10b9c033071e7ef9cbbe403152e4f4f71a2a6da
