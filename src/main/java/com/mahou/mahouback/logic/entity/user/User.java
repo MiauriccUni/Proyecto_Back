@@ -16,13 +16,23 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true, length = 25)
+    private String username;
+
+    @Column(length = 25)
     private String name;
+
+    @Column(length = 25)
     private String lastname;
-    @Column(unique = true, length = 100, nullable = false)
+
+    @Column(unique = true, length = 50, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
+
+    private Boolean status;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -61,6 +71,18 @@ public class User implements UserDetails {
     @Override
     public String getUsername() {
         return email;
+    }
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public Long getId() {
@@ -107,7 +129,6 @@ public class User implements UserDetails {
     public Role getRole() {
         return role;
     }
-
 
     public User setRole(Role role) {
         this.role = role;
