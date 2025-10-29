@@ -2,6 +2,9 @@ package com.mahou.mahouback.rest.user;
 
 import com.mahou.mahouback.logic.entity.http.GlobalResponseHandler;
 import com.mahou.mahouback.logic.entity.http.Meta;
+import com.mahou.mahouback.logic.entity.role.Role;
+import com.mahou.mahouback.logic.entity.role.RoleEnum;
+import com.mahou.mahouback.logic.entity.role.RoleRepository;
 import com.mahou.mahouback.logic.entity.user.User;
 import com.mahou.mahouback.logic.entity.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +32,9 @@ public class UserRestController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> getAll(
@@ -47,11 +53,19 @@ public class UserRestController {
         return new GlobalResponseHandler().handleResponse("Users retrieved successfully",
                 usersPage.getContent(), HttpStatus.OK, meta);
     }
-//note
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
+        Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+        if (foundUser.isPresent()) {
+            return new GlobalResponseHandler().handleResponse("El usuario " + user.getEmail() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
+        }
+        Role role = new Role();
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.USER);
+        user.setRole(optionalRole.orElse(role));
         userRepository.save(user);
         return new GlobalResponseHandler().handleResponse("User updated successfully",
                 user, HttpStatus.OK, request);
