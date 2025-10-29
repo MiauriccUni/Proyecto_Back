@@ -47,7 +47,7 @@ public class UserRestController {
         return new GlobalResponseHandler().handleResponse("Users retrieved successfully",
                 usersPage.getContent(), HttpStatus.OK, meta);
     }
-
+//note
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
