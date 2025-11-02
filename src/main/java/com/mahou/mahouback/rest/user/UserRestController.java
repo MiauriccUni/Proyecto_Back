@@ -55,17 +55,24 @@ public class UserRestController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+   // @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+        Optional<User> foundUserName = userRepository.findByUsername(user.getUsername());
         if (foundUser.isPresent()) {
             return new GlobalResponseHandler().handleResponse("El usuario " + user.getEmail() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
         }
-        Role role = new Role();
 
+        if (foundUserName.isPresent()) {
+            return new GlobalResponseHandler().handleResponse("El nombre de usuario " + user.getUsername() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
+        }
+
+        Role role = new Role();
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.USER);
         user.setRole(optionalRole.orElse(role));
+        user.setStatus(true);
         userRepository.save(user);
         return new GlobalResponseHandler().handleResponse("User updated successfully",
                 user, HttpStatus.OK, request);
