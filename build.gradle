@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.mahou'
 version = '0.0.1-SNAPSHOT'
-
+1
 description = 'MahouBack'
 
 java {

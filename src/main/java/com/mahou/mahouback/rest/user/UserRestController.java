@@ -93,6 +93,24 @@ public class UserRestController {
         }
     }
 
+    @PutMapping("/{email}")
+    public ResponseEntity<?> updateUserByEmail(@RequestBody User user, HttpServletRequest request) {
+
+        Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+
+        if(foundUser.isPresent()) {
+            foundUser.get().setPassword(passwordEncoder.encode(user.getPassword()));
+
+            userRepository.save(foundUser.get());
+
+            return new GlobalResponseHandler().handleResponse("Contraseña actualizada exitosamente",
+                    user.getEmail(), HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado " + user.getEmail() + ", si no se ha registrado puede hacerlo!!"  ,
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
