@@ -6,7 +6,6 @@ import com.mahou.mahouback.logic.entity.suceso.Suceso;
 import com.mahou.mahouback.logic.entity.user.User;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -21,10 +20,10 @@ public class Historia {
     private String titulo;
 
     @Column(length = 500)
-    private String descripcion;
+    private String description;
 
     @Column(columnDefinition = "TEXT")
-    private String contenido;
+    private String content;
 
 
     // Relación con el usuario que creó la historia
@@ -48,8 +47,8 @@ public class Historia {
     public String getTitulo() { return titulo; }
     public void setTitulo(String titulo) { this.titulo = titulo; }
 
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public String getDescription() { return description; }
+    public void setDescription(String descripcion) { this.description = descripcion; }
 
     public User getUsuario() { return usuario; }
     public void setUsuario(User usuario) { this.usuario = usuario; }
@@ -57,11 +56,11 @@ public class Historia {
     public List<Suceso> getSucesos() { return sucesos; }
     public void setSucesos(List<Suceso> sucesos) { this.sucesos = sucesos; }
 
-    public String getContenido() {
-        return contenido;
+    public String getContent() {
+        return content;
     }
 
-    public void setContenido(String contenido) {
-        this.contenido = contenido;
+    public void setContent(String contenido) {
+        this.content = contenido;
     }
 }

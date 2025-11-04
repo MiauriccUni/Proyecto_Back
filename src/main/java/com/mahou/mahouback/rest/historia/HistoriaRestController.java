@@ -107,7 +107,7 @@ public class HistoriaRestController {
         Historia existing = historia.get();
 //        existing.setTitulo(historiaActualizada.getTitulo());
 //        existing.setDescripcion(historiaActualizada.getDescripcion());
-        existing.setContenido(historiaActualizada.getContenido());
+        existing.setContent(historiaActualizada.getContent());
 
         historiaRepository.save(existing);
 
