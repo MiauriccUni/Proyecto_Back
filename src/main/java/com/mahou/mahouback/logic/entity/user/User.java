@@ -34,6 +34,8 @@ public class User implements UserDetails {
 
     private Boolean status;
 
+    private String photo;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.getName().toString());
@@ -95,6 +97,14 @@ public class User implements UserDetails {
 
     public String getName() {
         return name;
+    }
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 
     public void setName(String name) {
