@@ -58,14 +58,21 @@ public class UserRestController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+        Optional<User> foundUserName = userRepository.findByUsername(user.getUsername());
         if (foundUser.isPresent()) {
             return new GlobalResponseHandler().handleResponse("El usuario " + user.getEmail() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
         }
-        Role role = new Role();
 
+        if (foundUserName.isPresent()) {
+            return new GlobalResponseHandler().handleResponse("El nombre de usuario " + user.getUsername() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
+        }
+
+        Role role = new Role();
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         Optional<Role> optionalRole = roleRepository.findByName(RoleEnum.USER);
         user.setRole(optionalRole.orElse(role));
+        user.setStatus(true);
         userRepository.save(user);
         return new GlobalResponseHandler().handleResponse("User updated successfully",
                 user, HttpStatus.OK, request);
@@ -84,6 +91,57 @@ public class UserRestController {
             return new GlobalResponseHandler().handleResponse("User id " + userId + " not found"  ,
                     HttpStatus.NOT_FOUND, request);
         }
+    }
+
+    @PutMapping("/pass/{email}")
+    public ResponseEntity<?> updateUserByEmail(@RequestBody User user, HttpServletRequest request) {
+
+        Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+
+        if(foundUser.isPresent()) {
+            foundUser.get().setPassword(passwordEncoder.encode(user.getPassword()));
+
+            userRepository.save(foundUser.get());
+
+            return new GlobalResponseHandler().handleResponse("Contraseña actualizada exitosamente",
+                    user.getEmail(), HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado " + user.getEmail() + ", si no se ha registrado puede hacerlo!!"  ,
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<?> updateOrSave(@RequestBody User user, HttpServletRequest request) {
+        Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
+
+        if (foundUser.isEmpty()) {
+            addUser(user, request);
+
+            return new GlobalResponseHandler().handleResponse("Nuevo Usuario Registrado!!",
+                    user, HttpStatus.OK, request);
+
+        }
+
+        if (foundUser.isPresent()) {
+            User existingUser = foundUser.get();
+            existingUser.setUsername(user.getUsername());
+            existingUser.setName(user.getName());
+            existingUser.setLastname(user.getLastname());
+            existingUser.setEmail(user.getEmail());
+            existingUser.setPhoto(user.getPhoto());
+            existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            Optional<Role> optionalRole = roleRepository.findByName(user.getRole().getName());
+            existingUser.setRole(optionalRole.orElse(new Role()));
+            existingUser.setStatus(true);
+
+            userRepository.save(existingUser);
+
+            return new GlobalResponseHandler().handleResponse("Usuario Correctemente Actualizado!!",
+                    existingUser, HttpStatus.OK, request);
+        }
+
+        return new GlobalResponseHandler().handleResponse("User not found", HttpStatus.NOT_FOUND, request);
     }
 
 
