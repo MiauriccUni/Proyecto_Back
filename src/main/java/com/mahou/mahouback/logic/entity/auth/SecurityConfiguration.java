@@ -31,6 +31,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/users/**").permitAll()
+                        .requestMatchers("/upload/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement()

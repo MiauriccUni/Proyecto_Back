@@ -26,8 +26,7 @@ public class HistoriaRestController {
     @Autowired
     private SucesoRepository sucesoRepository;
 
-    // ==================== ENDPOINTS DE HISTORIAS ====================
-
+    // ==================== ENDPOINTS DE HISTORIAS ====================z
     // Crear historia (solo el usuario logeado)
     @PostMapping
     public ResponseEntity<?> createHistoria(
@@ -74,7 +73,7 @@ public class HistoriaRestController {
         if (historia.isEmpty() || !historia.get().getUsuario().getId().equals(usuarioLogeado.getId())) {
             return new GlobalResponseHandler().handleResponse(
                     "Historia no encontrada o no pertenece al usuario",
-                    HttpStatus.FORBIDDEN,
+                    HttpStatus.NOT_FOUND,
                     request
             );
         }
@@ -106,8 +105,9 @@ public class HistoriaRestController {
         }
 
         Historia existing = historia.get();
-        existing.setTitulo(historiaActualizada.getTitulo());
-        existing.setDescripcion(historiaActualizada.getDescripcion());
+//        existing.setTitulo(historiaActualizada.getTitulo());
+//        existing.setDescripcion(historiaActualizada.getDescripcion());
+        existing.setContent(historiaActualizada.getContent());
 
         historiaRepository.save(existing);
 
