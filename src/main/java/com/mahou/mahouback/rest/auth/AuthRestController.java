@@ -24,7 +24,6 @@ import java.util.Optional;
 @RestController
 public class AuthRestController {
 
-
     @Autowired
     private UserRepository userRepository;
 
@@ -33,8 +32,6 @@ public class AuthRestController {
 
     @Autowired
     private RoleRepository roleRepository;
-
-
 
     private final AuthenticationService authenticationService;
     private final JwtService jwtService;
