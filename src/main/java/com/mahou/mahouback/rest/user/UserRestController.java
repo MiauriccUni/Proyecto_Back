@@ -54,8 +54,8 @@ public class UserRestController {
                 usersPage.getContent(), HttpStatus.OK, meta);
     }
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PostMapping("/addUser")
+   // @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
         Optional<User> foundUserName = userRepository.findByUsername(user.getUsername());
@@ -74,8 +74,24 @@ public class UserRestController {
         user.setRole(optionalRole.orElse(role));
         user.setStatus(true);
         userRepository.save(user);
-        return new GlobalResponseHandler().handleResponse("User updated successfully",
+        return new GlobalResponseHandler().handleResponse("Usuario Modificado correctamente",
                 user, HttpStatus.OK, request);
+    }
+
+    @PutMapping("/userUpdate/{email}")
+   // @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateUser( @RequestBody User user, HttpServletRequest request) {
+
+        Optional<User> foundOrder = userRepository.findByEmail(user.getEmail());
+        if(foundOrder.isPresent()) {
+
+            userRepository.save(user);
+            return new GlobalResponseHandler().handleResponse("Usuario " + user.getEmail() + " actualizado exitosamente",
+                    user, HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario " + user.getEmail() + " correctamente actualizado"  ,
+                    HttpStatus.NOT_FOUND, request);
+        }
     }
 
     @PutMapping("/{userId}")
@@ -120,7 +136,6 @@ public class UserRestController {
 
             return new GlobalResponseHandler().handleResponse("Nuevo Usuario Registrado!!",
                     user, HttpStatus.OK, request);
-
         }
 
         if (foundUser.isPresent()) {
