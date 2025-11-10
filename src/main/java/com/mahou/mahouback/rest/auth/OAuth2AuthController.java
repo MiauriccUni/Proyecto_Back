@@ -43,6 +43,7 @@ public class OAuth2AuthController {
             user.setName(googleUserDTO.getName());
             user.setLastname(googleUserDTO.getLastname());
             user.setPhoto(googleUserDTO.getPhotoUrl());
+            user.setUsername(googleUserDTO.getEmail());
             user.setStatus(true);
             user.setPassword(passwordEncoder.encode(googleUserDTO.getEmail()));
             user.setRole(roleRepository.findByName(RoleEnum.USER).orElseThrow());
