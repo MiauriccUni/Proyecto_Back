@@ -144,7 +144,7 @@ public class UserRestController {
             existingUser.setName(user.getName());
             existingUser.setLastname(user.getLastname());
             existingUser.setEmail(user.getEmail());
-            existingUser.setPhoto(user.getPhoto());
+
             existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
             Optional<Role> optionalRole = roleRepository.findByName(user.getRole().getName());
             existingUser.setRole(optionalRole.orElse(new Role()));
