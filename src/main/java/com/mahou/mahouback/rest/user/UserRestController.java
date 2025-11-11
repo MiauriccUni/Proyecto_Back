@@ -105,11 +105,6 @@ public class UserRestController {
             if (dto.getName() != null) existingUser.setName(dto.getName());
             if (dto.getLastname() != null) existingUser.setLastname(dto.getLastname());
             if (dto.getUsername() != null) existingUser.setUsername(dto.getUsername());
-            Optional <User> fo = userRepository.findByUsername(dto.getUsername());
-            if (fo.isPresent()){
-                return new GlobalResponseHandler().handleResponse("Este usuario " + dto.getUsername() +  "ya esta en uso",
-                        HttpStatus.NOT_FOUND, request);
-            }
             if (dto.getPassword() != null) existingUser.setPassword(passwordEncoder.encode(dto.getPassword()));
             if (dto.getPhoto() != null) existingUser.setPhoto(dto.getPhoto());
             if (dto.getStatus() != null) existingUser.setStatus(dto.getStatus());
