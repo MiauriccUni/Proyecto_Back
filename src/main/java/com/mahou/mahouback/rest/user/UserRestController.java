@@ -55,6 +55,20 @@ public class UserRestController {
                 usersPage.getContent(), HttpStatus.OK, meta);
     }
 
+    @GetMapping("/{email}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email, HttpServletRequest request) {
+        Optional<User> foundUser = userRepository.findByEmail(email);
+
+        if (foundUser.isPresent()) {
+            return new GlobalResponseHandler().handleResponse("Usuario encontrado correctamente",
+                    foundUser.get(), HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado " + email ,
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
     @PostMapping("/addUser")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
@@ -78,6 +92,7 @@ public class UserRestController {
                 user, HttpStatus.OK, request);
     }
 
+
     @PutMapping("/update")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUser(@RequestBody UserDTO dto, HttpServletRequest request) {
@@ -90,6 +105,11 @@ public class UserRestController {
             if (dto.getName() != null) existingUser.setName(dto.getName());
             if (dto.getLastname() != null) existingUser.setLastname(dto.getLastname());
             if (dto.getUsername() != null) existingUser.setUsername(dto.getUsername());
+            Optional <User> fo = userRepository.findByUsername(dto.getUsername());
+            if (fo.isPresent()){
+                return new GlobalResponseHandler().handleResponse("Este usuario " + dto.getUsername() +  "ya esta en uso",
+                        HttpStatus.NOT_FOUND, request);
+            }
             if (dto.getPassword() != null) existingUser.setPassword(passwordEncoder.encode(dto.getPassword()));
             if (dto.getPhoto() != null) existingUser.setPhoto(dto.getPhoto());
             if (dto.getStatus() != null) existingUser.setStatus(dto.getStatus());
@@ -159,6 +179,8 @@ public class UserRestController {
                     HttpStatus.NOT_FOUND, request);
         }
     }
+
+
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
