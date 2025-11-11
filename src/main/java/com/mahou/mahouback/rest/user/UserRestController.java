@@ -78,6 +78,26 @@ public class UserRestController {
                 user, HttpStatus.OK, request);
     }
 
+
+
+    @PutMapping("/updateEmail/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateEmail(@PathVariable Long id, @RequestBody UserDTO email, HttpServletRequest request) {
+
+        Optional<User> foundUser = userRepository.findById(id);
+
+        if (foundUser.isPresent()) {
+            User existingUser = foundUser.get();
+            existingUser.setEmail(email.getEmail());
+            userRepository.save(existingUser);
+            return new GlobalResponseHandler().handleResponse("Email actualizado exitosamente",
+                    existingUser, HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado",
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
     @PutMapping("/update")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUser(@RequestBody UserDTO dto, HttpServletRequest request) {
