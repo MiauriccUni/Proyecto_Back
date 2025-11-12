@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.security.AuthProvider;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +18,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, length = 25)
+    @Column(unique = true)
     private String username;
 
     @Column(length = 25)
@@ -46,7 +47,6 @@ public class User implements UserDetails {
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
 
-    // Constructors
     public User() {}
 
 
