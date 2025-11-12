@@ -55,16 +55,26 @@ public class UserRestController {
                 usersPage.getContent(), HttpStatus.OK, meta);
     }
 
+    @GetMapping("/{email}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email, HttpServletRequest request) {
+        Optional<User> foundUser = userRepository.findByEmail(email);
+
+        if (foundUser.isPresent()) {
+            return new GlobalResponseHandler().handleResponse("Usuario encontrado correctamente",
+                    foundUser.get(), HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado " + email ,
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
     @PostMapping("/addUser")
     public ResponseEntity<?> addUser(@RequestBody User user, HttpServletRequest request) {
         Optional<User> foundUser = userRepository.findByEmail(user.getEmail());
-        Optional<User> foundUserName = userRepository.findByUsername(user.getUsername());
+
         if (foundUser.isPresent()) {
             return new GlobalResponseHandler().handleResponse("El usuario " + user.getEmail() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
-        }
-
-        if (foundUserName.isPresent()) {
-            return new GlobalResponseHandler().handleResponse("El nombre de usuario " + user.getUsername() + ". ya se encuentra registrado", HttpStatus.CONFLICT, request);
         }
 
         Role role = new Role();
@@ -78,6 +88,26 @@ public class UserRestController {
                 user, HttpStatus.OK, request);
     }
 
+
+
+    @PutMapping("/updateEmail/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateEmail(@PathVariable Long id, @RequestBody UserDTO email, HttpServletRequest request) {
+
+        Optional<User> foundUser = userRepository.findById(id);
+
+        if (foundUser.isPresent()) {
+            User existingUser = foundUser.get();
+            existingUser.setEmail(email.getEmail());
+            userRepository.save(existingUser);
+            return new GlobalResponseHandler().handleResponse("Email actualizado exitosamente",
+                    existingUser, HttpStatus.OK, request);
+        } else {
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado",
+                    HttpStatus.NOT_FOUND, request);
+        }
+    }
+
     @PutMapping("/update")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateUser(@RequestBody UserDTO dto, HttpServletRequest request) {
@@ -89,7 +119,6 @@ public class UserRestController {
 
             if (dto.getName() != null) existingUser.setName(dto.getName());
             if (dto.getLastname() != null) existingUser.setLastname(dto.getLastname());
-            if (dto.getUsername() != null) existingUser.setUsername(dto.getUsername());
             if (dto.getPassword() != null) existingUser.setPassword(passwordEncoder.encode(dto.getPassword()));
             if (dto.getPhoto() != null) existingUser.setPhoto(dto.getPhoto());
             if (dto.getStatus() != null) existingUser.setStatus(dto.getStatus());
