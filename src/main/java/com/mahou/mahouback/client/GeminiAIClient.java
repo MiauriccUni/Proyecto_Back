@@ -1,5 +1,7 @@
 package com.mahou.mahouback.client;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mahou.mahouback.logic.entity.GeminiAI.AnalisisResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -14,55 +16,43 @@ public class GeminiAIClient {
     @Value("${gemini.api.key}")
     private String apiKey;
 
+    private AnalisisResponse parsearRespuesta(String rawJson) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+
+            // La respuesta REAL de Gemini viene anidada así:
+            // { "candidates": [ { "content": { "parts": [ { "text": "{json}" } ] } } ] }
+
+            JsonNode root = mapper.readTree(rawJson);
+
+            String contenidoPlano =
+                    root.path("candidates")
+                            .path(0)
+                            .path("content")
+                            .path("parts")
+                            .path(0)
+                            .path("text")
+                            .asText();
+
+            // Ahora contenidoPlano contiene EXACTAMENTE el JSON generado por tu prompt.
+            // Ej: { "personajes": [...], "sucesos": [...], "objetos": [...] }
+
+            return mapper.readValue(contenidoPlano, AnalisisResponse.class);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al parsear la respuesta de Gemini: " + e.getMessage(), e);
+        }
+    }
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     public AnalisisResponse enviarTextoAGemini(String texto) {
-
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;
-
-        String prompt = "Analiza la siguiente historia y extrae la información de forma 100% estructurada.\n\n" +
-                "REGLAS:\n" +
-                "1. No inventes datos que no estén en la historia.\n" +
-                "2. Si un campo no existe, devuélvelo vacío.\n" +
-                "3. Todas las fechas deben ser convertidas a formato ISO: YYYY-MM-DD.\n" +
-                "4. Todas las relaciones deben ser listas de nombres literales. No devuelvas IDs.\n\n" +
-                "FORMATO DE SALIDA (estricto):\n\n" +
-                "{\n" +
-                "  \"personajes\": [\n" +
-                "    {\n" +
-                "      \"nombre\": \"\",\n" +
-                "      \"apellido\": \"\",\n" +
-                "      \"entidadOGrupo\": \"\",\n" +
-                "      \"paisOLugarOrigen\": \"\",\n" +
-                "      \"descripcion\": \"\",\n" +
-                "      \"estado\": \"\",\n" +
-                "      \"familiares\": [],\n" +
-                "      \"amistades\": [],\n" +
-                "      \"enemigos\": []\n" +
-                "    }\n" +
-                "  ],\n\n" +
-                "  \"sucesos\": [\n" +
-                "    {\n" +
-                "      \"titulo\": \"\",\n" +
-                "      \"descripcion\": \"\",\n" +
-                "      \"fecha\": \"YYYY-MM-DD\"\n" +
-                "    }\n" +
-                "  ],\n\n" +
-                "  \"objetos\": [\n" +
-                "    {\n" +
-                "      \"nombre\": \"\",\n" +
-                "      \"tipo\": \"\",\n" +
-                "      \"descripcion\": \"\",\n" +
-                "      \"relaciones\": []\n" +
-                "    }\n" +
-                "  ]\n" +
-                "}\n\n" +
-                "Aquí está la historia a analizar:\n" + texto;
 
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(
                         Map.of("parts", List.of(
-                                Map.of("text", prompt)
+                                Map.of("text", generarPrompt(texto))
                         ))
                 )
         );
@@ -72,9 +62,63 @@ public class GeminiAIClient {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<AnalisisResponse> response =
-                restTemplate.exchange(url, HttpMethod.POST, entity, AnalisisResponse.class);
+        ResponseEntity<String> raw = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
 
-        return response.getBody();
+        // EXTRAER EL JSON REAL DE LA RESPUESTA
+        return parsearRespuesta(raw.getBody());
+    }
+
+    private String generarPrompt(String texto) {
+        return """
+Analiza la siguiente historia y extrae la información de forma 100% estructurada.
+
+REGLAS:
+1. No inventes datos que no estén en la historia.
+2. Si un campo no existe, devuélvelo vacío.
+3. Todas las fechas deben ser convertidas a formato ISO: YYYY-MM-DD.
+4. Todas las relaciones deben ser listas de nombres literales. No devuelvas IDs.
+
+FORMATO DE SALIDA (estricto):
+
+{
+  "personajes": [
+    {
+      "nombre": "",
+      "apellido": "",
+      "entidadOGrupo": "",
+      "paisOLugarOrigen": "",
+      "descripcion": "",
+      "estado": "",
+      "familiares": [],
+      "amistades": [],
+      "enemigos": []
+    }
+  ],
+
+  "sucesos": [
+    {
+      "titulo": "",
+      "descripcion": "",
+      "fecha": "YYYY-MM-DD"
+    }
+  ],
+
+  "objetos": [
+    {
+      "nombre": "",
+      "tipo": "",
+      "descripcion": "",
+      "relaciones": []
+    }
+  ]
+}
+
+Aquí está la historia a analizar:
+""" + texto;
     }
 }

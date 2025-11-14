@@ -7,6 +7,7 @@ import com.mahou.mahouback.logic.entity.http.GlobalResponseHandler;
 import com.mahou.mahouback.logic.entity.suceso.Suceso;
 import com.mahou.mahouback.logic.entity.suceso.SucesoRepository;
 import com.mahou.mahouback.logic.entity.user.User;
+import com.mahou.mahouback.service.AnalisisHistoriaService;
 import com.mahou.mahouback.service.GeminiAIService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,8 @@ public class HistoriaRestController {
     @Autowired
     private SucesoRepository sucesoRepository;
 
+    @Autowired
+    private AnalisisHistoriaService analisisHistoriaService;
     // ==================== ENDPOINTS DE HISTORIAS ====================z
     // Crear historia (solo el usuario logeado)
     @PostMapping
@@ -113,6 +116,9 @@ public class HistoriaRestController {
         existing.setContent(historiaActualizada.getContent());
 
         historiaRepository.save(existing);
+
+        //analisis
+        analisisHistoriaService.analizarHistoria(existing);
 
         return new GlobalResponseHandler().handleResponse(
                 "Historia actualizada exitosamente",

@@ -2,8 +2,12 @@ package com.mahou.mahouback.service;
 
 import com.mahou.mahouback.client.GeminiAIClient;
 import com.mahou.mahouback.logic.entity.GeminiAI.AnalisisResponse;
+import com.mahou.mahouback.logic.entity.historia.Historia;
+import com.mahou.mahouback.logic.entity.objeto.Objeto;
 import com.mahou.mahouback.logic.entity.objeto.ObjetoRepository;
+import com.mahou.mahouback.logic.entity.personaje.Personaje;
 import com.mahou.mahouback.logic.entity.personaje.PersonajeRepository;
+import com.mahou.mahouback.logic.entity.suceso.Suceso;
 import com.mahou.mahouback.logic.entity.suceso.SucesoRepository;
 import com.mahou.mahouback.logic.mapper.ObjetoMapper;
 import com.mahou.mahouback.logic.mapper.PersonajeMapper;
@@ -39,16 +43,38 @@ public class AnalisisHistoriaService {
         this.objetoRepository = objetoRepository;
     }
 
-    public void analizarHistoria(String texto) {
-        AnalisisResponse response = geminiAIClient.enviarTextoAGemini(texto);
+    public void analizarHistoria(Historia historia) {
+        String contenido = historia.getContent();
+        if (contenido == null || contenido.isBlank()) {
+            System.out.println("La historia está vacía. No se ejecuta análisis.");
+            return;
+        }
 
-        response.getPersonajes().forEach(dto ->
-                personajeRepository.save(personajeMapper.toEntity(dto)));
+        // 1. Gemini analiza el contenido
+        AnalisisResponse response = geminiAIClient.enviarTextoAGemini(contenido);
 
-        response.getSucesos().forEach(dto ->
-                sucesoRepository.save(sucesoMapper.toEntity(dto)));
+        if (response == null) {
+            System.out.println("⚠ No se recibió respuesta válida de Gemini.");
+            return;
+        }
 
-        response.getObjetos().forEach(dto ->
-                objetoRepository.save(objetoMapper.toEntity(dto)));
+        // 2. Guardar PERSONAJES
+        response.getPersonajes().forEach(dto -> {
+            Personaje p = personajeMapper.toEntity(dto);
+            personajeRepository.save(p);
+        });
+
+        // 3. Guardar SUCESOS
+        response.getSucesos().forEach(dto -> {
+            Suceso s = sucesoMapper.toEntity(dto);
+            s.setHistoria(historia);   // 🔥 IMPORTANTE
+            sucesoRepository.save(s);
+        });
+
+        // 4. Guardar OBJETOS
+        response.getObjetos().forEach(dto -> {
+            Objeto o = objetoMapper.toEntity(dto);
+            objetoRepository.save(o);
+        });
     }
 }
