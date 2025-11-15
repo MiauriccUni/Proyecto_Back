@@ -16,6 +16,7 @@ public class GeminiAIClient {
     @Value("${gemini.api.key}")
     private String apiKey;
 
+
     private AnalisisResponse parsearRespuesta(String rawJson) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -120,5 +121,46 @@ FORMATO DE SALIDA (estricto):
 
 Aquí está la historia a analizar:
 """ + texto;
+    }
+
+    public String enviarMensajeChat(String prompt) {
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;
+
+        Map<String, Object> requestBody = Map.of(
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
+                )
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity<String> raw = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                entity,
+                String.class
+        );
+
+        // Extrae el texto (candidates[0].content.parts[0].text)
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(raw.getBody());
+            String contenidoPlano = root.path("candidates")
+                    .path(0)
+                    .path("content")
+                    .path("parts")
+                    .path(0)
+                    .path("text")
+                    .asText();
+
+            return contenidoPlano;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al extraer texto de Gemini: " + e.getMessage(), e);
+        }
     }
 }

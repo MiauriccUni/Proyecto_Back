@@ -19,4 +19,7 @@ public class GeminiAIService {
         return geminiClient.enviarTextoAGemini(texto);
     }
 
+    public String enviarChatPrompt(String prompt) {
+        return geminiClient.enviarMensajeChat(prompt);
+    }
 }
