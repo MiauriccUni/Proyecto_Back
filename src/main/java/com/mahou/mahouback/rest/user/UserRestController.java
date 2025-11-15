@@ -113,7 +113,6 @@ public class UserRestController {
     public ResponseEntity<?> updateUser(@RequestBody UserDTO dto, HttpServletRequest request) {
 
         Optional<User> foundUser = userRepository.findByEmail(dto.getEmail());
-
         if (foundUser.isPresent()) {
             User existingUser = foundUser.get();
 
@@ -134,29 +133,23 @@ public class UserRestController {
                             HttpStatus.BAD_REQUEST, request);
                 }
             }
-
             userRepository.save(existingUser);
-
             return new GlobalResponseHandler().handleResponse("Usuario actualizado exitosamente",
                     existingUser, HttpStatus.OK, request);
-        } else {
-            return new GlobalResponseHandler().handleResponse("Usuario no encontrado",
-                    HttpStatus.NOT_FOUND, request);
-        }
-    }
 
-    @PutMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody User user, HttpServletRequest request) {
-        Optional<User> foundOrder = userRepository.findById(userId);
-        if (foundOrder.isPresent()) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
-            return new GlobalResponseHandler().handleResponse("User updated successfully",
-                    user, HttpStatus.OK, request);
-        } else {
-            return new GlobalResponseHandler().handleResponse("User id " + userId + " not found",
-                    HttpStatus.NOT_FOUND, request);
+        }else {
+            User user = new User();
+            user.setEmail(dto.getEmail());
+            user.setUsername(dto.getEmail());
+            user.setName(dto.getName());
+            user.setLastname(dto.getLastname());
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+            user.setPhoto(dto.getPhoto());
+            user.setStatus(dto.getStatus());
+            user.setRole(roleRepository.findByName(RoleEnum.USER).orElseThrow());
+            addUser(user, request);
+            return new GlobalResponseHandler().handleResponse("Nuevo usuario registrado",
+                     HttpStatus.OK, request);
         }
     }
 
