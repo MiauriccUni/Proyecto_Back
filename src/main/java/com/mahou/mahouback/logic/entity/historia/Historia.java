@@ -29,7 +29,7 @@ public class Historia {
     // Relación con el usuario que creó la historia
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id", nullable = false)
-    @JsonIgnore  // ← AGREGA ESTA LÍNEA
+    @JsonIgnore
     private User usuario;
 
     // Relación con los sucesos dentro de la historia
