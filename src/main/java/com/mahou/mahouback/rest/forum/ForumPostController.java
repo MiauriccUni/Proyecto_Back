@@ -27,15 +27,16 @@ public class ForumPostController {
     @Autowired
     private HistoriaRepository historiaRepository;
 
+
     @PostMapping
     public ResponseEntity<?> createPost(
             @RequestBody ForumPostDTO postDTO,
             @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        Optional<Historia> story = historiaRepository.findById(postDTO.getStoryId());
+        Optional<Historia> storyOpt = historiaRepository.findById(postDTO.getStoryId());
 
-        if (story.isEmpty() || !story.get().getUsuario().getId().equals(loggedUser.getId())) {
+        if (storyOpt.isEmpty() || !storyOpt.get().getUsuario().getId().equals(loggedUser.getId())) {
             return new GlobalResponseHandler().handleResponse(
                     "No puedes publicar una historia que no te pertenece",
                     HttpStatus.FORBIDDEN,
@@ -43,7 +44,9 @@ public class ForumPostController {
             );
         }
 
-        Optional<ForumPost> existingPost = forumPostRepository.findByStoryId(story.get().getId());
+        Historia story = storyOpt.get();
+
+        Optional<ForumPost> existingPost = forumPostRepository.findByStoryId(story.getId());
         if (existingPost.isPresent()) {
             return new GlobalResponseHandler().handleResponse(
                     "Esta historia ya está publicada en el foro",
@@ -53,11 +56,14 @@ public class ForumPostController {
         }
 
         ForumPost forumPost = new ForumPost();
-        forumPost.setStory(story.get());
+        forumPost.setStory(story);
         forumPost.setAuthor(loggedUser);
         forumPost.setSynopsis(postDTO.getSynopsis());
         forumPost.setGenre(postDTO.getGenre());
-        forumPost.setPublic(postDTO.getIsPublic());
+
+        boolean isPublic = postDTO.getIsPublic() != null ? postDTO.getIsPublic() : true;
+        forumPost.setIsPublic(isPublic);
+
         forumPost.setPublishedAt(LocalDateTime.now());
         forumPost.setViews(0);
         forumPost.setComments(0);
@@ -72,28 +78,41 @@ public class ForumPostController {
         );
     }
 
+
     @GetMapping
-    public ResponseEntity<?> getAllPosts(HttpServletRequest request) {
-        List<ForumPost> posts = forumPostRepository.findByIsPublicTrueOrderByPublishedAtDesc();
+    public ResponseEntity<?> getAllPosts(
+            @AuthenticationPrincipal User loggedUser,
+            HttpServletRequest request) {
+
+        List<ForumPost> posts;
+
+        if (loggedUser == null) {
+            posts = forumPostRepository.findByIsPublicTrueOrderByPublishedAtDesc();
+        } else {
+            posts = forumPostRepository.findByIsPublicTrueOrAuthorIdOrderByPublishedAtDesc(
+                    Math.toIntExact(loggedUser.getId())
+            );
+        }
 
         return new GlobalResponseHandler().handleResponse(
-                "Historias públicas del foro",
+                "Historias del foro (públicas + privadas del usuario)",
                 posts,
                 HttpStatus.OK,
                 request
         );
     }
 
+
     @PostMapping("/publish/{storyId}")
     public ResponseEntity<?> publishStory(
             @PathVariable Integer storyId,
-            @RequestBody ForumPost forumPost,
+            @RequestBody ForumPostDTO postDTO,
             @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        Optional<Historia> story = historiaRepository.findById(storyId);
+        Optional<Historia> storyOpt = historiaRepository.findById(storyId);
 
-        if (story.isEmpty() || !story.get().getUsuario().getId().equals(loggedUser.getId())) {
+        if (storyOpt.isEmpty() || !storyOpt.get().getUsuario().getId().equals(loggedUser.getId())) {
             return new GlobalResponseHandler().handleResponse(
                     "No puedes publicar una historia que no te pertenece",
                     HttpStatus.FORBIDDEN,
@@ -101,8 +120,29 @@ public class ForumPostController {
             );
         }
 
-        forumPost.setStory(story.get());
+        Historia story = storyOpt.get();
+
+        Optional<ForumPost> existingPost = forumPostRepository.findByStoryId(story.getId());
+        if (existingPost.isPresent()) {
+            return new GlobalResponseHandler().handleResponse(
+                    "Esta historia ya está publicada en el foro",
+                    HttpStatus.CONFLICT,
+                    request
+            );
+        }
+
+        ForumPost forumPost = new ForumPost();
+        forumPost.setStory(story);
         forumPost.setAuthor(loggedUser);
+        forumPost.setSynopsis(postDTO.getSynopsis());
+        forumPost.setGenre(postDTO.getGenre());
+
+        boolean isPublic = postDTO.getIsPublic() != null ? postDTO.getIsPublic() : true;
+        forumPost.setIsPublic(isPublic);
+
+        forumPost.setPublishedAt(LocalDateTime.now());
+        forumPost.setViews(0);
+        forumPost.setComments(0);
 
         ForumPost saved = forumPostRepository.save(forumPost);
 
@@ -113,6 +153,7 @@ public class ForumPostController {
                 request
         );
     }
+
 
     @GetMapping("/public")
     public ResponseEntity<?> getPublicStories(HttpServletRequest request) {
@@ -126,14 +167,30 @@ public class ForumPostController {
         );
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getPostById(
             @PathVariable Integer id,
+            @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        Optional<ForumPost> post = forumPostRepository.findById(id);
+        Optional<ForumPost> postOpt = forumPostRepository.findById(id);
 
-        if (post.isEmpty() || !post.get().isPublic()) {
+        if (postOpt.isEmpty()) {
+            return new GlobalResponseHandler().handleResponse(
+                    "Publicación no encontrada",
+                    HttpStatus.NOT_FOUND,
+                    request
+            );
+        }
+
+        ForumPost forumPost = postOpt.get();
+
+        boolean isOwner = loggedUser != null &&
+                forumPost.getAuthor() != null &&
+                forumPost.getAuthor().getId().equals(loggedUser.getId());
+
+        if (!forumPost.getIsPublic() && !isOwner) {
             return new GlobalResponseHandler().handleResponse(
                     "Publicación no encontrada o privada",
                     HttpStatus.NOT_FOUND,
@@ -141,7 +198,6 @@ public class ForumPostController {
             );
         }
 
-        ForumPost forumPost = post.get();
         forumPost.setViews(forumPost.getViews() + 1);
         forumPostRepository.save(forumPost);
 
@@ -153,12 +209,15 @@ public class ForumPostController {
         );
     }
 
+
     @GetMapping("/my-posts")
     public ResponseEntity<?> getUserPosts(
             @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        List<ForumPost> posts = forumPostRepository.findByAuthorId(Math.toIntExact(loggedUser.getId()));
+        List<ForumPost> posts = forumPostRepository.findByAuthorId(
+                Math.toIntExact(loggedUser.getId())
+        );
 
         return new GlobalResponseHandler().handleResponse(
                 "Publicaciones del usuario",
@@ -168,6 +227,7 @@ public class ForumPostController {
         );
     }
 
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
             @PathVariable Integer id,
@@ -175,9 +235,10 @@ public class ForumPostController {
             @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        Optional<ForumPost> existingPost = forumPostRepository.findById(id);
+        Optional<ForumPost> existingPostOpt = forumPostRepository.findById(id);
 
-        if (existingPost.isEmpty() || !existingPost.get().getAuthor().getId().equals(loggedUser.getId())) {
+        if (existingPostOpt.isEmpty() ||
+                !existingPostOpt.get().getAuthor().getId().equals(loggedUser.getId())) {
             return new GlobalResponseHandler().handleResponse(
                     "No puedes editar una publicación que no te pertenece",
                     HttpStatus.FORBIDDEN,
@@ -185,10 +246,14 @@ public class ForumPostController {
             );
         }
 
-        ForumPost forumPost = existingPost.get();
+        ForumPost forumPost = existingPostOpt.get();
         forumPost.setSynopsis(postDTO.getSynopsis());
         forumPost.setGenre(postDTO.getGenre());
-        forumPost.setPublic(postDTO.getIsPublic());
+
+        boolean isPublic = postDTO.getIsPublic() != null
+                ? postDTO.getIsPublic()
+                : forumPost.getIsPublic();
+        forumPost.setIsPublic(isPublic);
 
         ForumPost updated = forumPostRepository.save(forumPost);
 
@@ -200,15 +265,17 @@ public class ForumPostController {
         );
     }
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletePost(
             @PathVariable Integer id,
             @AuthenticationPrincipal User loggedUser,
             HttpServletRequest request) {
 
-        Optional<ForumPost> post = forumPostRepository.findById(id);
+        Optional<ForumPost> postOpt = forumPostRepository.findById(id);
 
-        if (post.isEmpty() || !post.get().getAuthor().getId().equals(loggedUser.getId())) {
+        if (postOpt.isEmpty() ||
+                !postOpt.get().getAuthor().getId().equals(loggedUser.getId())) {
             return new GlobalResponseHandler().handleResponse(
                     "No puedes eliminar una publicación que no te pertenece",
                     HttpStatus.FORBIDDEN,
@@ -216,7 +283,7 @@ public class ForumPostController {
             );
         }
 
-        forumPostRepository.delete(post.get());
+        forumPostRepository.delete(postOpt.get());
 
         return new GlobalResponseHandler().handleResponse(
                 "Publicación eliminada exitosamente",
@@ -225,11 +292,12 @@ public class ForumPostController {
         );
     }
 
+
     static class ForumPostDTO {
         private Integer storyId;
         private String synopsis;
         private String genre;
-        private Boolean isPublic;
+        private Boolean isPublic = true;
 
         public Integer getStoryId() {
             return storyId;

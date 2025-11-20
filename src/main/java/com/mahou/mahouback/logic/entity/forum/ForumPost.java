@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.mahou.mahouback.logic.entity.historia.Historia;
 import com.mahou.mahouback.logic.entity.user.User;
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -27,7 +28,7 @@ public class ForumPost {
     @Column(length = 500)
     private String synopsis;
 
-    @Column(nullable = false)
+    @Column(name = "is_public", nullable = false)
     private boolean isPublic = true;
 
     @Column(nullable = false)
@@ -44,30 +45,75 @@ public class ForumPost {
 
     public ForumPost() {}
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public Integer getId() {
+        return id;
+    }
 
-    public Historia getStory() { return story; }
-    public void setStory(Historia story) { this.story = story; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public User getAuthor() { return author; }
-    public void setAuthor(User author) { this.author = author; }
+    public Historia getStory() {
+        return story;
+    }
 
-    public String getSynopsis() { return synopsis; }
-    public void setSynopsis(String synopsis) { this.synopsis = synopsis; }
+    public void setStory(Historia story) {
+        this.story = story;
+    }
 
-    public boolean isPublic() { return isPublic; }
-    public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+    public User getAuthor() {
+        return author;
+    }
 
-    public LocalDateTime getPublishedAt() { return publishedAt; }
-    public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
+    public void setAuthor(User author) {
+        this.author = author;
+    }
 
-    public int getViews() { return views; }
-    public void setViews(int views) { this.views = views; }
+    public String getSynopsis() {
+        return synopsis;
+    }
 
-    public int getComments() { return comments; }
-    public void setComments(int comments) { this.comments = comments; }
+    public void setSynopsis(String synopsis) {
+        this.synopsis = synopsis;
+    }
 
-    public String getGenre() { return genre; }
-    public void setGenre(String genre) { this.genre = genre; }
+    public boolean getIsPublic() {
+        return isPublic;
+    }
+
+    public void setIsPublic(boolean isPublic) {
+        this.isPublic = isPublic;
+    }
+
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(LocalDateTime publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
+    public int getViews() {
+        return views;
+    }
+
+    public void setViews(int views) {
+        this.views = views;
+    }
+
+    public int getComments() {
+        return comments;
+    }
+
+    public void setComments(int comments) {
+        this.comments = comments;
+    }
+
+    public String getGenre() {
+        return genre;
+    }
+
+    public void setGenre(String genre) {
+        this.genre = genre;
+    }
 }
