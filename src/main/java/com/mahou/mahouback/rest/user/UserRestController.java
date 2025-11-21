@@ -88,8 +88,6 @@ public class UserRestController {
                 user, HttpStatus.OK, request);
     }
 
-
-
     @PutMapping("/updateEmail/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateEmail(@PathVariable Long id, @RequestBody UserDTO email, HttpServletRequest request) {
@@ -136,20 +134,10 @@ public class UserRestController {
             userRepository.save(existingUser);
             return new GlobalResponseHandler().handleResponse("Usuario actualizado exitosamente",
                     existingUser, HttpStatus.OK, request);
-
         }else {
-            User user = new User();
-            user.setEmail(dto.getEmail());
-            user.setUsername(dto.getEmail());
-            user.setName(dto.getName());
-            user.setLastname(dto.getLastname());
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            user.setPhoto(dto.getPhoto());
-            user.setStatus(dto.getStatus());
-            user.setRole(roleRepository.findByName(RoleEnum.USER).orElseThrow());
-            addUser(user, request);
-            return new GlobalResponseHandler().handleResponse("Nuevo usuario registrado",
-                     HttpStatus.OK, request);
+
+            return new GlobalResponseHandler().handleResponse("Usuario no encontrado",
+                     HttpStatus.NOT_FOUND, request);
         }
     }
 
