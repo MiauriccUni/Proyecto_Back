@@ -19,7 +19,7 @@ public class Historia {
     @Column(nullable = false, length = 100)
     private String titulo;
 
-    @Column(length = 500)
+    @Column(length = 1000)
     private String description;
 
     @Column(columnDefinition = "TEXT")
