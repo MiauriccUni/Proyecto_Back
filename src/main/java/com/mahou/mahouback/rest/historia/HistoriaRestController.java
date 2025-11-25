@@ -1,11 +1,14 @@
 package com.mahou.mahouback.rest.historia;
 
+import com.mahou.mahouback.logic.entity.GeminiAI.AnalisisResponse;
 import com.mahou.mahouback.logic.entity.historia.Historia;
 import com.mahou.mahouback.logic.entity.historia.HistoriaRepository;
 import com.mahou.mahouback.logic.entity.http.GlobalResponseHandler;
 import com.mahou.mahouback.logic.entity.suceso.Suceso;
 import com.mahou.mahouback.logic.entity.suceso.SucesoRepository;
 import com.mahou.mahouback.logic.entity.user.User;
+import com.mahou.mahouback.service.AnalisisHistoriaService;
+import com.mahou.mahouback.service.GeminiAIService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -26,6 +30,8 @@ public class HistoriaRestController {
     @Autowired
     private SucesoRepository sucesoRepository;
 
+    @Autowired
+    private AnalisisHistoriaService analisisHistoriaService;
     // ==================== ENDPOINTS DE HISTORIAS ====================z
     // Crear historia (solo el usuario logeado)
     @PostMapping
@@ -110,6 +116,9 @@ public class HistoriaRestController {
         existing.setContent(historiaActualizada.getContent());
 
         historiaRepository.save(existing);
+
+        //analisis
+        analisisHistoriaService.analizarHistoria(existing);
 
         return new GlobalResponseHandler().handleResponse(
                 "Historia actualizada exitosamente",
@@ -319,4 +328,27 @@ public class HistoriaRestController {
                 request
         );
     }
+
+    //AI analysis
+    @Autowired
+    private GeminiAIService geminiAIService;
+
+    @PostMapping("/analizar")
+    public ResponseEntity<?> analizarTextoHistoria(
+            @RequestBody Map<String, String> requestBody,
+            HttpServletRequest request) {
+
+        String texto = requestBody.get("texto");
+
+        AnalisisResponse analisis = geminiAIService.analizarTexto(texto);
+
+        return new GlobalResponseHandler().handleResponse(
+                "Análisis generado exitosamente",
+                analisis,
+                HttpStatus.OK,
+                request
+        );
+    }
+
+
 }
