@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/users/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/users/**").permitAll()
                         .requestMatchers("/upload/**").permitAll()
+//                        .requestMatchers("/*/**").permitAll() // TODO: Quitar
                         .anyRequest().authenticated()
                 )
                 .sessionManagement()
