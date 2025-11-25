@@ -36,3 +36,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+*.lock
+
+
+application.properties
