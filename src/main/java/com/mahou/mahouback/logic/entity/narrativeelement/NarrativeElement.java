@@ -3,6 +3,7 @@ package com.mahou.mahouback.logic.entity.narrativeelement;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.mahou.mahouback.logic.entity.historia.Historia;
 import com.mahou.mahouback.logic.entity.narrativeelementtype.NarrativeElementType;
 import com.mahou.mahouback.logic.entity.relationship.Relationship;
 import com.mahou.mahouback.logic.entity.relationshiptype.RelationshipType;
@@ -40,10 +41,10 @@ public class NarrativeElement {
     @JsonIgnore
     private User usuario;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "historia_id", nullable = false)
-    @JsonIgnore
-    private User history;
+//    @JsonIgnore
+    private Historia history;
 
     @Column
     private String nodePosition;
@@ -98,11 +99,11 @@ public class NarrativeElement {
         this.usuario = usuario;
     }
 
-    public User getHistory() {
+    public Historia getHistory() {
         return history;
     }
 
-    public void setHistory(User history) {
+    public void setHistory(Historia history) {
         this.history = history;
     }
 
