@@ -1,7 +1,10 @@
 package com.mahou.mahouback.rest.relationship;
+import com.mahou.mahouback.logic.DTO.RelationshipDTO;
 import com.mahou.mahouback.logic.entity.narrativeelement.NarrativeElement;
+import com.mahou.mahouback.logic.entity.narrativeelement.NarrativeElementsRepository;
 import com.mahou.mahouback.logic.entity.relationship.Relationship;
 import com.mahou.mahouback.logic.entity.relationship.RelationshipRepository;
+import com.mahou.mahouback.logic.entity.relationshiptype.RelationshipType;
 import com.mahou.mahouback.logic.entity.relationshiptype.RelationshipTypeRepository;
 import com.mahou.mahouback.logic.entity.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,12 @@ public class RelationshipController {
 
     @Autowired
     private RelationshipRepository relationshipRepository;
+    @Autowired
+    private NarrativeElementsRepository narrativeElementsRepository;
+
+    @Autowired
+    private RelationshipTypeRepository relationshipTypeRepository;
+
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -35,4 +44,25 @@ public class RelationshipController {
         return new ResponseEntity<>(relations, HttpStatus.OK);
     }
 
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> addRelationship(@AuthenticationPrincipal User usuarioLogueado,
+                                                              @RequestBody RelationshipDTO relationship){
+
+        NarrativeElement fromElement = narrativeElementsRepository.findById(relationship.from).orElse(null);
+        NarrativeElement toElement = narrativeElementsRepository.findById(relationship.to).orElse(null);
+        RelationshipType relType = relationshipTypeRepository.findById(relationship.type).orElse(null);
+
+
+        Relationship relationshipEntity = new Relationship();
+        relationshipEntity.setUsuario(usuarioLogueado);
+        relationshipEntity.setFrom(fromElement);
+        relationshipEntity.setTo(toElement);
+        relationshipEntity.setType(relType);
+
+        relationshipRepository.save(relationshipEntity);
+
+        return new ResponseEntity<>(HttpStatus.OK);
+
+    }
 }

@@ -1,18 +1,11 @@
 package com.mahou.mahouback.rest.narrativeelementtype;
-import com.mahou.mahouback.logic.entity.genre.Genre;
-import com.mahou.mahouback.logic.entity.http.GlobalResponseHandler;
-import com.mahou.mahouback.logic.entity.http.Meta;
-import com.mahou.mahouback.logic.entity.narrativeelement.NarrativeElementsRepository;
 import com.mahou.mahouback.logic.entity.narrativeelementtype.NarrativeElementType;
 import com.mahou.mahouback.logic.entity.narrativeelementtype.NarrativeElementTypeRepository;
 import com.mahou.mahouback.logic.entity.user.User;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +29,16 @@ public class NarrativeElementTypeController {
 
         return new ResponseEntity<>(narrativeElementTypes, HttpStatus.OK);
 
+    }
+
+    @PostMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> newNarrativeElementType(@AuthenticationPrincipal User user, @RequestBody NarrativeElementType narrativeElementType) {
+
+        narrativeElementType.setUsuario(user);
+        NarrativeElementType type = narrativeElementTypeRepository.save(narrativeElementType);
+
+        return new ResponseEntity<>(type, HttpStatus.CREATED);
     }
 
 }
