@@ -1,4 +1,4 @@
-package com.mahou.mahouback.restgame;
+package com.mahou.mahouback.rest.restgame;
 
 import com.mahou.mahouback.logic.entity.Game.GameDTO;
 import com.mahou.mahouback.service.GameService.GameService;

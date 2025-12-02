@@ -37,6 +37,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/topic/**").permitAll()
                         .requestMatchers("/queue/**").permitAll()
                         .requestMatchers("/upload/**").permitAll()
+                        .requestMatchers("/api/game/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement()

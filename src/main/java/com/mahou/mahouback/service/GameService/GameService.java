@@ -40,7 +40,7 @@ public class GameService {
 
         game = gameRepository.save(game);
 
-        // Create initial units for host
+
         createInitialUnits(game, 0, request.getStartingUnits());
 
         return new GameDTO.CreateGameResponse(
@@ -70,10 +70,10 @@ public class GameService {
 
         gameRepository.save(game);
 
-        // Create initial units for guest
+
         createInitialUnits(game, 1, 3);
 
-        // Notify all players that game has started
+
         broadcastGameState(game.getId());
 
         return new GameDTO.JoinGameResponse(
@@ -107,7 +107,7 @@ public class GameService {
             throw new RuntimeException("Not your turn");
         }
 
-        // Simple movement - just update position and decrease movement
+
         unit.setQ(request.getTargetQ());
         unit.setR(request.getTargetR());
         unit.setRemainingMovement(0);
@@ -144,7 +144,11 @@ public class GameService {
             throw new RuntimeException("Cannot attack your own units");
         }
 
-        // Calculate damage
+        int distance = calculateDistance(attacker.getQ(), attacker.getR(), defender.getQ(), defender.getR());
+        if (distance > attacker.getAttackRange()) {
+            throw new RuntimeException("Target out of attack range");
+        }
+
         Random random = new Random();
         double attackRoll = 0.8 + random.nextDouble() * 0.4;
         double defenseRoll = 0.8 + random.nextDouble() * 0.4;
@@ -155,7 +159,7 @@ public class GameService {
         int actualDamage = Math.max(0, attackerDamage - defender.getDefense());
         int counterDamage = Math.max(0, defenderDamage - attacker.getDefense());
 
-        // Apply damage
+
         attacker.setHealth(attacker.getHealth() - counterDamage);
         attacker.setHasAttacked(true);
         defender.setHealth(defender.getHealth() - actualDamage);
@@ -163,7 +167,7 @@ public class GameService {
         boolean attackerDied = attacker.getHealth() <= 0;
         boolean defenderDied = defender.getHealth() <= 0;
 
-        // Save or delete units
+
         if (attackerDied) {
             unitRepository.delete(attacker);
         } else {
@@ -176,7 +180,6 @@ public class GameService {
             unitRepository.save(defender);
         }
 
-        // Check for game over
         long hostUnits = unitRepository.countByGameIdAndOwner(gameId, 0);
         long guestUnits = unitRepository.countByGameIdAndOwner(gameId, 1);
 
@@ -223,7 +226,7 @@ public class GameService {
 
         gameRepository.save(game);
 
-        // Reset units for next player
+
         List<GameUnit> units = unitRepository.findByGameIdAndOwner(gameId, nextPlayer);
         units.forEach(unit -> {
             unit.setRemainingMovement(unit.getMovement());
@@ -236,13 +239,13 @@ public class GameService {
 
     private void createInitialUnits(Game game, Integer owner, Integer count) {
         String[] unitTypes = {"WARRIOR", "ARCHER", "CAVALRY"};
+
         Map<String, Integer[]> unitStats = Map.of(
-                "WARRIOR", new Integer[]{100, 25, 15, 2},
-                "ARCHER", new Integer[]{70, 30, 8, 2},
-                "CAVALRY", new Integer[]{90, 35, 10, 4}
+                "WARRIOR", new Integer[]{100, 25, 15, 2, 1},
+                "ARCHER", new Integer[]{70, 30, 8, 2, 3},
+                "CAVALRY", new Integer[]{90, 35, 10, 4, 1}
         );
 
-        // Simple spawn positions based on owner
         int baseQ = owner == 0 ? -5 : 5;
         int baseR = owner == 0 ? -5 : 5;
 
@@ -264,6 +267,7 @@ public class GameService {
             unit.setDefense(stats[2]);
             unit.setMovement(stats[3]);
             unit.setRemainingMovement(stats[3]);
+            unit.setAttackRange(stats[4]);
             unit.setHasAttacked(false);
             unit.setColor(PLAYER_COLORS[owner]);
             unit.setIcon(UNIT_ICONS.get(type));
@@ -291,6 +295,12 @@ public class GameService {
         );
     }
 
+    private int calculateDistance(int q1, int r1, int q2, int r2) {
+        int x1 = q1, z1 = r1, y1 = -q1 - r1;
+        int x2 = q2, z2 = r2, y2 = -q2 - r2;
+        return (Math.abs(x1 - x2) + Math.abs(y1 - y2) + Math.abs(z1 - z2)) / 2;
+    }
+
     private GameDTO.UnitDTO toUnitDTO(GameUnit unit) {
         return new GameDTO.UnitDTO(
                 unit.getUnitId(),
@@ -307,7 +317,8 @@ public class GameService {
                 unit.getRemainingMovement(),
                 unit.getHasAttacked(),
                 unit.getColor(),
-                unit.getIcon()
+                unit.getIcon(),
+                unit.getAttackRange()
         );
     }
 

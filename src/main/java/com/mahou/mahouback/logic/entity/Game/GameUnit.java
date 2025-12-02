@@ -28,6 +28,9 @@ public class GameUnit {
     private String name;
 
     @Column(nullable = false)
+    private Integer attackRange;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private UnitType type;
 

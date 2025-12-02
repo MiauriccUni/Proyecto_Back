@@ -90,6 +90,7 @@ public class GameDTO {
         private Boolean hasAttacked;
         private String color;
         private String icon;
+        private Integer attackRange;
     }
 
     @Data
