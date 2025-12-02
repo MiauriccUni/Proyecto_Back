@@ -55,4 +55,30 @@ public class NarrativeElementController {
         return new ResponseEntity<>(relations, HttpStatus.OK);
     }
 
+    @PostMapping
+    @PreAuthorize("isAuthenticated")
+    public ResponseEntity<?> newNarrativeElement(@RequestBody NarrativeElement narrativeElement, @AuthenticationPrincipal User usuarioLogeado) {
+
+        narrativeElement.setUsuario(usuarioLogeado);
+        NarrativeElement saved = narrativeElementsRepository.save(narrativeElement);
+
+        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    }
+
+    @PatchMapping("/{element_id}/position")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateNodePosition(@RequestBody String position, @PathVariable int element_id) {
+
+        NarrativeElement element =  narrativeElementsRepository.findById(element_id).orElse(null);
+
+        if (element == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        element.setNodePosition(position);
+        narrativeElementsRepository.save(element);
+
+        return  new ResponseEntity<>(HttpStatus.OK);
+    }
+
 }
