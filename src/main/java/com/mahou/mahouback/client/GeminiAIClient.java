@@ -1,90 +1,68 @@
 package com.mahou.mahouback.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.genai.Client;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
+import com.google.genai.errors.ApiException;
 import com.mahou.mahouback.logic.entity.GeminiAI.AnalisisResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class GeminiAIClient {
+
     @Value("${gemini.api.key}")
     private String apiKey;
 
+    private final ObjectMapper mapper = new ObjectMapper();
 
-    private AnalisisResponse parsearRespuesta(String rawJson) {
+    private Client buildClient() {
+        return Client.builder()
+                .apiKey(apiKey)
+                .build();
+    }
+    public AnalisisResponse enviarTextoAGemini(String texto) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-
-            // La respuesta REAL de Gemini viene anidada así:
-            // { "candidates": [ { "content": { "parts": [ { "text": "{json}" } ] } } ] }
-
-            JsonNode root = mapper.readTree(rawJson);
-
-            String contenidoPlano =
-                    root.path("candidates")
-                            .path(0)
-                            .path("content")
-                            .path("parts")
-                            .path(0)
-                            .path("text")
-                            .asText();
-
-            // Ahora contenidoPlano contiene EXACTAMENTE el JSON generado por tu prompt.
-            // Ej: { "personajes": [...], "sucesos": [...], "objetos": [...] }
-
-            return mapper.readValue(contenidoPlano, AnalisisResponse.class);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error al parsear la respuesta de Gemini: " + e.getMessage(), e);
+            Client client = buildClient();
+            String prompt = generarPrompt(texto);
+            GenerateContentResponse response = client.models.generateContent(
+                    "gemini-2.5-flash", prompt,null
+            );
+            String rawTextResponse = response.text();
+            return mapper.readValue(rawTextResponse, AnalisisResponse.class);
+        } catch (JsonProcessingException | ApiException e) {
+            throw new RuntimeException("Error al procesar la solicitud a Gemini: " + e.getMessage(), e);
         }
     }
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    public String enviarMensajeChat(String prompt, String contexto) {
+        try {
+            Client client = buildClient();
 
-    public AnalisisResponse enviarTextoAGemini(String texto) {
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;
-
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", generarPrompt(texto))
-                        ))
-                )
-        );
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-        ResponseEntity<String> raw = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
-
-        // EXTRAER EL JSON REAL DE LA RESPUESTA
-        return parsearRespuesta(raw.getBody());
+            GenerateContentResponse response = client.models.generateContent(
+              "gemini-2.5-flash", contexto+"Usa la historia proveida de contexto. Responde la siguiente pregunta realizada por el usuario para ayudarlo a mejorar su redaccion y encontrar errores y/o dar recomendaciones (ESCRIBE EL MENSAJE EN UN MENSAJE DE TEXTO PLANO, SIN CAMBIOS DE GUION, SIN LETRAS EN NEGRITA NI ITALICOS NI SUBRAYADO. EL MENSAJE DEBE DE SER FLUIDO PUES LA RESPUESTA APARECERA EN UN CONTENEDOR DE TEXTO BASICO.):"+prompt,null
+            );
+            return response.text();
+        } catch (ApiException e) {
+            throw new RuntimeException("Error en la comunicación con Gemini AI: " + e.getMessage(), e);
+        }
     }
+
 
     private String generarPrompt(String texto) {
         return """
-Analiza la siguiente historia y extrae la información de forma 100% estructurada.
+Analiza la siguiente historia y extrae la información 100% estructurada.
 
 REGLAS:
-1. No inventes datos que no estén en la historia.
-2. Si un campo no existe, devuélvelo vacío.
-3. Todas las fechas deben ser convertidas a formato ISO: YYYY-MM-DD.
-4. Todas las relaciones deben ser listas de nombres literales. No devuelvas IDs.
+1. No inventes datos.
+2. Si algo no existe, deja el campo vacío.
+3. Las fechas deben estar en formato ISO: YYYY-MM-DD.
+4. Las relaciones deben ser listas de nombres literales.
 
-FORMATO DE SALIDA (estricto):
+FORMATO ESTRICTO:
 
 {
   "personajes": [
@@ -100,7 +78,6 @@ FORMATO DE SALIDA (estricto):
       "enemigos": []
     }
   ],
-
   "sucesos": [
     {
       "titulo": "",
@@ -108,7 +85,6 @@ FORMATO DE SALIDA (estricto):
       "fecha": "YYYY-MM-DD"
     }
   ],
-
   "objetos": [
     {
       "nombre": "",
@@ -121,46 +97,5 @@ FORMATO DE SALIDA (estricto):
 
 Aquí está la historia a analizar:
 """ + texto;
-    }
-
-    public String enviarMensajeChat(String prompt) {
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" + apiKey;
-
-        Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of("parts", List.of(
-                                Map.of("text", prompt)
-                        ))
-                )
-        );
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-        ResponseEntity<String> raw = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
-
-        // Extrae el texto (candidates[0].content.parts[0].text)
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(raw.getBody());
-            String contenidoPlano = root.path("candidates")
-                    .path(0)
-                    .path("content")
-                    .path("parts")
-                    .path(0)
-                    .path("text")
-                    .asText();
-
-            return contenidoPlano;
-        } catch (Exception e) {
-            throw new RuntimeException("Error al extraer texto de Gemini: " + e.getMessage(), e);
-        }
     }
 }
