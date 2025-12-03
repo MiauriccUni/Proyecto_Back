@@ -119,7 +119,7 @@ public class UserRestController {
             if (dto.getPassword() != null) existingUser.setPassword(passwordEncoder.encode(dto.getPassword()));
             if (dto.getPhoto() != null) existingUser.setPhoto(dto.getPhoto());
             if (dto.getStatus() != null) existingUser.setStatus(dto.getStatus());
-
+            System.out.println(existingUser.getRole().getName());
             if (dto.getRoleName() != null) {
                 try {
                     RoleEnum roleEnum = RoleEnum.valueOf(dto.getRoleName().toUpperCase());

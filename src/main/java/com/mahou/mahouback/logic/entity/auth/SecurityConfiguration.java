@@ -32,8 +32,12 @@ public class SecurityConfiguration {
                       .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/users/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/app/**").permitAll()
+                        .requestMatchers("/topic/**").permitAll()
+                        .requestMatchers("/queue/**").permitAll()
                         .requestMatchers("/upload/**").permitAll()
-//                        .requestMatchers("/*/**").permitAll() // TODO: Quitar
+                        .requestMatchers("/api/game/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement()
